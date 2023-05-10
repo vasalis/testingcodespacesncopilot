@@ -31,5 +31,29 @@ namespace Company.Function
 
             return new OkObjectResult(responseMessage);
         }
+
+        // create azure function with http triggers that take care of create, update, delete and get employee
+        // make sure that you use CosmosDB as your database
+
+        [FunctionName("CreateEmployee")]
+        public static async Task<IActionResult> CreateEmployee(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "CreateEmployee")] HttpRequest req,
+            [CosmosDB(
+                databaseName: "EmployeeDB",
+                collectionName: "Employee",
+                ConnectionStringSetting = "CosmosDBConnection")] IAsyncCollector<Employee> employee,
+            ILogger log)
+        {
+            log.LogInformation("Creating a new employee");
+
+            string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
+            var input = JsonConvert.DeserializeObject<Employee>(requestBody);
+
+            await employee.AddAsync(input);
+
+            return new OkObjectResult(input);
+        }
+
+
     }
 }
